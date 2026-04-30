@@ -6,7 +6,6 @@ import { newsSubscription } from "./subscriptions";
 import { NewsInfo } from "./news";
 import { BookmarkInfo } from "./bookmark";
 import { timelineInfo } from "./timeline";
-import { uspTimeLineInfo } from "./uspTimeline/bookmark copy";
 import { youtubeInfo } from "./Youtube";
 import { XInfo } from "./twitter";
 
@@ -21,7 +20,6 @@ const typeDefs = `
         ${NewsInfo.queries}
         ${BookmarkInfo.queries}
         ${timelineInfo.queries}
-        ${uspTimeLineInfo.queries}
         ${youtubeInfo.queries}
         ${XInfo.queries}
     }
@@ -30,7 +28,6 @@ const typeDefs = `
         ${User.mutations}
         ${newsSubscription.mutations}
         ${BookmarkInfo.mutations}
-        ${uspTimeLineInfo.mutations}
     }
 
 `;
@@ -45,7 +42,6 @@ const resolvers = {
         ...NewsInfo.resolvers.queries,
         ...BookmarkInfo.resolvers.queries,
         ...timelineInfo.resolvers.queries,
-        ...uspTimeLineInfo.resolvers.queries,
         ...youtubeInfo.resolvers.queries,
         ...XInfo.resolvers.queries
     },
@@ -53,7 +49,6 @@ const resolvers = {
         ...User.resolvers.mutations,
         ...newsSubscription.resolvers.mutation,
         ...BookmarkInfo.resolvers.mutations,
-        ...uspTimeLineInfo.resolvers.mutations
     }
 };
 

@@ -1,5 +1,5 @@
 import "dotenv/config"
-import express from "express";
+import  express, { Request, Response } from "express";
 import http from "http";
 import cors from "cors";
 import { WebSocketServer } from "ws";
@@ -51,7 +51,7 @@ async function init() {
     );
 
 
-    app.get("/", (req, res) => res.send("Server is healthy"));
+    app.get("/", (_req: Request, res: Response) => res.send("Server is healthy"));
     app.use("/api/v1/user", userRouter)
     app.use("/api/v1/oauth", OauthRouter);
 
