@@ -1,123 +1,134 @@
 import { prismaClient } from "../lib/db";
 import { contextMiddleware } from "./user";
 
+type Platform = "youtube" | "twitter";
+
 export class YoutubeService {
+  private static async getContentOfSameParent(
+    context: any,
+    query: string,
+    parentNewsId: string,
+    limit: number,
+    offset: number,
+    platform: Platform,
+  ) {
+    console.log(`fetching ${platform} content`, {
+      query,
+      parentNewsId,
+      limit,
+      offset,
+    });
 
-    public static async getYtOfSameParent(context: any, query: string, parentNewsId: string, limit: number, offset: number) {
+    let userId: string | null = null;
 
-        let initialNews = null;
-        console.log("fetching youtube content with query:", query, "parentNewsId:", parentNewsId, "limit:", limit, "offset:", offset);
-        let id = null;
-        try {
-            const { id: userid } = contextMiddleware(context);
-            id = userid;
-        } catch (error) {
-            console.log("fetching youtube content without logging in!")
-        }
-
-        if (query?.trim() === "") {
-            initialNews = await prismaClient.miniNews.findMany({
-                orderBy: {
-                    pubDate: 'desc',
-                },
-                where: {
-                    youtube: true,
-                    newsId: parentNewsId
-                },
-                skip: offset,
-                take: limit,
-            });
-        }
-        else {
-            initialNews = await prismaClient.$queryRawUnsafe(
-                `
-            SELECT id, title, content, score, youtube, category, "newsId", "pubDate", link, source, "imageUrl"
-            FROM "MiniNews"
-            WHERE "newsId" = $2
-            AND youtube = true
-            AND search_vector @@ plainto_tsquery('english', $1)
-            ORDER BY ts_rank(search_vector, plainto_tsquery('english', $1)) DESC
-            LIMIT $3 OFFSET $4;
-            `,
-                query,
-                parentNewsId,
-                limit,
-                offset
-            );
-        }
-
-        if (!initialNews) throw new Error("error in fetching Ytnews!")
-        if (id) {
-            const userBookmarkedData = await prismaClient.bookmark.findMany({
-                where: { userId: id }
-            })
-            initialNews = (initialNews as { id: string }[]).map((news: { id: string }) => {
-                const isBookmarked = userBookmarkedData.some((bookmark: { miniNewsId: string }) => bookmark.miniNewsId === news.id);
-                return {
-                    ...news,
-                    isBookmarked
-                }
-            })
-        }
-        return initialNews
+    try {
+      const { id } = contextMiddleware(context);
+      userId = id;
+    } catch {
+      console.log(`fetching ${platform} content without login`);
     }
 
-    public static async getXOfSameParent(context: any, query: string, parentNewsId: string, limit: number, offset: number) {
+    const trimmedQuery = query?.trim();
 
-        let initialNews = null;
-        console.log("fetching X content with query:", query, "parentNewsId:", parentNewsId, "limit:", limit, "offset:", offset);
-        let id = null;
-        try {
-            const { id: userid } = contextMiddleware(context);
-            id = userid;
-        } catch (error) {
-            console.log("fetching X content without logging in!")
-        }
+    const initialNews = await prismaClient.miniNews.findMany({
+      where: {
+        newsId: parentNewsId,
 
-        if (query?.trim() === "") {
-            initialNews = await prismaClient.miniNews.findMany({
-                orderBy: {
-                    pubDate: 'desc',
+        [platform]: true,
+
+        ...(trimmedQuery
+          ? {
+              OR: [
+                {
+                  title: {
+                    contains: trimmedQuery,
+                    mode: "insensitive",
+                  },
                 },
-                where: {
-                    twitter: true,
-                    newsId: parentNewsId
+                {
+                  content: {
+                    contains: trimmedQuery,
+                    mode: "insensitive",
+                  },
                 },
-                skip: offset,
-                take: limit,
-            });
-        }
-        else {
-            initialNews = await prismaClient.$queryRawUnsafe(
-                `
-            SELECT id, title, content, score, youtube, category, "newsId", "pubDate", link, source, "imageUrl"
-            FROM "MiniNews"
-            WHERE "newsId" = $2
-            AND twitter = true
-            AND search_vector @@ plainto_tsquery('english', $1)
-            ORDER BY ts_rank(search_vector, plainto_tsquery('english', $1)) DESC
-            LIMIT $3 OFFSET $4;
-            `,
-                query,
-                parentNewsId,
-                limit,
-                offset
-            );
-        }
+              ],
+            }
+          : {}),
+      },
 
-        if (!initialNews) throw new Error("error in fetching Xnews!")
-        if (id) {
-            const userBookmarkedData = await prismaClient.bookmark.findMany({
-                where: { userId: id }
-            })
-            initialNews = (initialNews as { id: string }[]).map((news: { id: string }) => {
-                const isBookmarked = userBookmarkedData.some((bookmark: { miniNewsId: string }) => bookmark.miniNewsId === news.id);
-                return {
-                    ...news,
-                    isBookmarked
-                }
-            })
-        }
-        return initialNews
+      orderBy: {
+        pubDate: "desc",
+      },
+      skip: offset,
+      take: limit,
+    });
+
+    if (!initialNews) {
+      throw new Error(`Error fetching ${platform} news`);
     }
+
+    if (!userId) {
+      return initialNews.map((news) => ({
+        ...news,
+        isBookmarked: false,
+      }));
+    }
+
+    const bookmarks = await prismaClient.bookmark.findMany({
+      where: {
+        userId,
+
+        miniNewsId: {
+          in: initialNews.map((news) => news.id),
+        },
+      },
+
+      select: {
+        miniNewsId: true,
+      },
+    });
+
+    const bookmarkedSet = new Set(
+      bookmarks.map((bookmark) => bookmark.miniNewsId),
+    );
+
+    return initialNews.map((news) => ({
+      ...news,
+      isBookmarked: bookmarkedSet.has(news.id),
+    }));
+  }
+
+  public static async getYtOfSameParent(
+    context: any,
+    query: string,
+    parentNewsId: string,
+    limit: number,
+    offset: number,
+  ) {
+    return this.getContentOfSameParent(
+      context,
+      query,
+      parentNewsId,
+      limit,
+      offset,
+      "youtube",
+    );
+  }
+
+  public static async getXOfSameParent(
+    context: any,
+    query: string,
+    parentNewsId: string,
+    limit: number,
+    offset: number,
+  ) {
+    return this.getContentOfSameParent(
+      context,
+      query,
+      parentNewsId,
+      limit,
+      offset,
+      "twitter",
+    );
+  }
 }
