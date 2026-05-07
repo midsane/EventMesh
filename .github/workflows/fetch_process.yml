@@ -48,8 +48,8 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           BACKEND_GRAPHQL_URL: ${{ secrets.BACKEND_GRAPHQL_URL }}
           MODE: ${ secrets.MODE }
-          SHIVAAY_API_KEY: ${{ secrets.SHIVAAY_API_KEY }}
-          GROQ_API_KEYS: ${{ secrets.GROQ_API_KEYS1 }}
+          # SHIVAAY_API_KEY: ${{ secrets.SHIVAAY_API_KEY }}
+          GROQ_API_KEYS: ${{ secrets.GROQ_API_KEYS }}
         run: node cron/dist/index.js
 
      
