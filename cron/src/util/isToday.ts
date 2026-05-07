@@ -1,5 +1,5 @@
 export const isToday = (dateStr: string) => {
-  const cleanedStr = dateStr.replace('·', '').replace(/\s+/g, ' ').trim();
+  const cleanedStr = dateStr.replace("·", "").replace(/\s+/g, " ").trim();
   const tweetDate = new Date(cleanedStr);
 
   if (isNaN(tweetDate.getTime())) {

@@ -1,9 +1,11 @@
 import { categoryNames, newsDataForCategory } from "../constant.js";
 
-export const getUserPromptForCategory = (processingNews: newsDataForCategory) => {
+export const getUserPromptForCategory = (
+  processingNews: newsDataForCategory,
+) => {
   const indexedCategoryArray = categoryNames
     .map((name, i) => `  ${i}: "${name}"`)
-    .join(',\n');
+    .join(",\n");
 
   return `
 You are an intelligent and precise news classification model.

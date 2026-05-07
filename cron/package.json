@@ -30,7 +30,7 @@
   },
   "scripts": {
     "build": "tsc -b",
-    "start": "tsc -b && node dist/embed.js",
+    "start": "tsc -b && node dist/index.js",
     "prod": "npm install && npx prisma generate && tsc -b"
   }
 }

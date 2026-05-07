@@ -2,7 +2,7 @@ import { newsDataForAi } from "../constant.js";
 
 export const getUserPrompt = (
   processingNews: newsDataForAi,
-  newsArticleInDB: newsDataForAi[]
+  newsArticleInDB: newsDataForAi[],
 ) => {
   return `
 You are given a \"processingNews\" article and an array of previously stored articles called \"newsArticleInDB\".
